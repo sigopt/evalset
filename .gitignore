@@ -1,0 +1,6 @@
+# iPython notebooks stuff
+*.idea*
+*.ipynb_checkpoints*
+
+# Compiled python stuff
+*.pyc
