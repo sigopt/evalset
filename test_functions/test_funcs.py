@@ -113,6 +113,7 @@ class TestFunction(object):
         return '{0}({1})'.format(self.__class__.__name__, self.dim)
 
     def evaluate(self, x):
+        x = numpy.asarray(x)
         if x.shape != (self.dim,):
           raise ValueError('Argument must be a numpy array of length {}'.format(self.dim))
 
@@ -3707,4 +3708,3 @@ class Problem22(TestFunction):
     def do_evaluate(self, x):
         x = x[0]
         return exp(-3 * x) - (sin(x)) ** 3
-
