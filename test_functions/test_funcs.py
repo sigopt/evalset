@@ -79,7 +79,7 @@ def execute_random_search(num_fevals, num_trials, function):
     # For instance, most sequential optimizers use the previous observations to get better results
     def random_search_next_point(bounds):
         np_bounds = asarray(list(bounds))
-        return np_bounds[:, 0] + (np_bounds[:, 1] - np_bounds[:, 0]) * numpy.random.random()
+        return np_bounds[:, 0] + (np_bounds[:, 1] - np_bounds[:, 0]) * numpy.random.random(len(np_bounds))
 
     f_best_hist = numpy.empty((num_trials, num_fevals))
     for this_trial in range(num_trials):
