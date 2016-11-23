@@ -49,8 +49,10 @@ from numpy import dot
 
 from scipy.special import jv as besselj
 
-seterr(all='ignore')
+from timeit import default_timer as now
+from collections import namedtuple
 
+seterr(all='ignore')
 
 def lzip(*args):
     """
@@ -77,7 +79,7 @@ def execute_random_search(num_fevals, num_trials, function):
     # For instance, most sequential optimizers use the previous observations to get better results
     def random_search_next_point(bounds):
         np_bounds = asarray(list(bounds))
-        return np_bounds[:, 0] + (np_bounds[:, 1] - np_bounds[:, 0]) * numpy.random.random()
+        return np_bounds[:, 0] + (np_bounds[:, 1] - np_bounds[:, 0]) * numpy.random.random(len(np_bounds))
 
     f_best_hist = numpy.empty((num_trials, num_fevals))
     for this_trial in range(num_trials):
@@ -99,9 +101,10 @@ class TestFunction(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, dim):
+    def __init__(self, dim, verify=True):
         assert dim > 0
         self.dim = dim
+        self.verify = verify
         self.num_evals = 0
         self.min_loc = None
         self.fmin = None
@@ -109,18 +112,31 @@ class TestFunction(object):
         self.bounds = None
         self.classifiers = []
 
+        # Note(Mike) - Not using the records yet, but will be soon
+        self.records = None
+        self.reset_records()
+
     def __repr__(self):
         return '{0}({1})'.format(self.__class__.__name__, self.dim)
 
     def evaluate(self, x):
-        x = numpy.asarray(x)
-        if x.shape != (self.dim,):
-          raise ValueError('Argument must be a numpy array of length {}'.format(self.dim))
+        if self.verify and (not isinstance(x, numpy.ndarray) or x.shape != (self.dim,)):
+            raise ValueError('Argument must be a numpy array of length {}'.format(self.dim))
 
         self.num_evals += 1
         value = self.do_evaluate(x)
+        to_be_returned = value.item() if hasattr(value, 'item') else value
+        self.update_records(now(), x, to_be_returned)
         # Convert numpy types to Python types
-        return value.item() if hasattr(value, 'item') else value
+        return to_be_returned
+
+    def update_records(self, time, location, value):
+        self.records['time'].append(time)
+        self.records['locations'].append(location)
+        self.records['values'].append(value)
+
+    def reset_records(self):
+        self.records = {'time': [], 'locations': [], 'values': []}
 
     @abstractmethod
     def do_evaluate(self, x):
@@ -140,8 +156,11 @@ class Discretizer(TestFunction):
 
     Example: ackley_res1 = Discretizer(Ackley(), 1)
     """
-    def __init__(self, func, res):
-        super(Discretizer, self).__init__(func.dim)
+    def __init__(self, func, res, verify=True):
+        assert isinstance(func, TestFunction)
+        if res <= 0:
+            raise ValueError('Resolution level must be positive, level={0}'.format(res))
+        super(Discretizer, self).__init__(func.dim, verify)
         self.bounds, self.min_loc = func.bounds, func.min_loc
         self.res = res
         self.fmax = numpy.floor(self.res * func.fmax) / self.res
@@ -194,9 +213,10 @@ class Failifier(TestFunction):
                 return False
         return True
 
+    # Note(Mike) - This is not really a simplex, more like the 1-norm.  But it's fine
     @staticmethod
     def in_simplex(x, c):
-        if abs(sum(x) - c) <= 1e-6:
+        if sum(abs(x)) <= c:
             return True
         return False
 
@@ -206,8 +226,9 @@ class Failifier(TestFunction):
             return True
         return False
 
-    def __init__(self, func, fail_indicator, return_nan=True):
-        super(Failifier, self).__init__(func.dim)
+    def __init__(self, func, fail_indicator, return_nan=True, verify=True):
+        assert isinstance(func, TestFunction)
+        super(Failifier, self).__init__(func.dim, verify)
         self.bounds, self.min_loc, self.fmax, self.fmin = func.bounds, func.min_loc, func.fmax, func.fmin
         self.func = func
         self.fail_indicator = fail_indicator
@@ -241,11 +262,14 @@ class Noisifier(TestFunction):
 
     Obviously, with the presence of noise, the max and min may no longer be accurate.
     """
-    def __init__(self, func, type, sd):
-        super(Noisifier, self).__init__(func.dim)
+    def __init__(self, func, noise_type, level, verify=True):
+        assert isinstance(func, TestFunction)
+        if level <= 0:
+            raise ValueError('Noise level must be positive, level={0}'.format(level))
+        super(Noisifier, self).__init__(func.dim, verify)
         self.bounds, self.min_loc, self.fmax, self.fmin = func.bounds, func.min_loc, func.fmax, func.fmin
-        self.type = type
-        self.level = sd
+        self.type = noise_type
+        self.level = level
         self.func = func
         self.classifiers = list(set(self.classifiers) | set(['noisy']))
 
@@ -848,6 +872,7 @@ class Exponential(TestFunction):
 
 class Franke(TestFunction):
     def __init__(self, dim=2):
+        assert dim == 2
         super(Franke, self).__init__(dim)
         self.bounds = lzip([0] * self.dim, [1] * self.dim)
         self.min_loc = [0.45571037432, 0.78419067287]
@@ -981,6 +1006,31 @@ class Hartmann3(TestFunction):
         for i in range(4):
             d[i] = sum(a[:, i] * (x - p[:, i]) ** 2)
         return -sum(c * exp(-d))
+
+
+class Hartmann4(TestFunction):
+    def __init__(self, dim=4):
+        assert dim == 4
+        super(Hartmann4, self).__init__(dim)
+        self.bounds = lzip([0] * self.dim, [1] * self.dim)
+        self.min_loc = [0.49204492762, 0.82366439640, 0.30064257056, 0.55643899079]
+        self.fmin = -3.93518472715
+        self.fmax = 1.31104361811
+
+    def do_evaluate(self, x):
+        a = asarray([[10, 3, 17, 3.5, 1.7, 8],
+                     [.05, 10, 17, .1, 8, 14],
+                     [3, 3.5, 1.7, 10, 17, 8],
+                     [17, 8, .05, 10, .1, 14]])
+        p = asarray([[.1312, .1696, .5569, .0124, .8283, .5886],
+                     [.2329, .4135, .8307, .3736, .1004, .9991],
+                     [.2348, .1451, .3522, .2883, .3047, .6650],
+                     [.4047, .8828, .8732, .5743, .1091, .0381]])
+        c = asarray([1, 1.2, 3, 3.2])
+        d = zeros_like(c)
+        for i in range(4):
+            d[i] = sum(a[:, i] * (x - p[:, i]) ** 2)
+        return (1.1 - sum(c * exp(-d))) / 0.839
 
 
 class Hartmann6(TestFunction):
@@ -1268,6 +1318,7 @@ class Matyas(TestFunction):
 
 class McCormick(TestFunction):
     def __init__(self, dim=2):
+        assert dim == 2
         TestFunction.__init__(self, dim)
         self.bounds = [(-1.5, 4), (-3, 4)]
         self.min_loc = [-0.5471975602214493, -1.547197559268372]
@@ -1885,7 +1936,7 @@ class McCourt17(McCourtBase):
     def __init__(self, dim=7):
         assert dim == 7
         centers = numpy.array([
-            [.3, .8, .3, .6, .2, .9, .5],
+            [.3, .8, .3, .6, .2, .8, .5],
             [.8, .3, .8, .2, .5, .2, .8],
             [.2, .7, .2, .5, .4, .7, .3],
         ])
@@ -1901,9 +1952,9 @@ class McCourt17(McCourtBase):
             return 1 / numpy.sqrt(1 + r2)
 
         super(McCourt17, self).__init__(dim, kernel, e_mat, coefs, centers)
-        self.min_loc = [.3, .8, .3, .6, .2, .9, .5]
-        self.fmin = -2.34862024181
-        self.fmax = 5.03408453334
+        self.min_loc = [.3125, .9166, .3125, .7062, .0397, .9270, .5979]
+        self.fmin = -0.47089199032
+        self.fmax = 4.98733340158
         self.classifiers = ['boring', 'unimodal']
 
 
@@ -2078,16 +2129,16 @@ class McCourt22(McCourtBase):
             [4, 2, 3, 1, 4],
             [3, 5, 1, 4, 5],
         ])
-        coefs = numpy.array([3, 4, -4, 2, -5, -2, 6])
+        coefs = numpy.array([3, 4, -4, 2, -3, -2, 6])
 
         def kernel(x):
             rmax = self.dist_sq(x, centers, e_mat, dist_type='inf')
             return numpy.exp(-rmax)
 
         super(McCourt22, self).__init__(dim, kernel, e_mat, coefs, centers)
-        self.min_loc = [0.8409, 0.9683, 0.0291, 0.1286, 0.5317]
-        self.fmin = -4.93993324749
-        self.fmax = 5.65567952572
+        self.min_loc = [0.2723, 0.4390, 0.8277, 0.3390, 0.3695]
+        self.fmin = -3.08088199150
+        self.fmax = 4.96977632014
         self.classifiers = ['nonsmooth']
 
 
@@ -2599,7 +2650,6 @@ class Perm02(TestFunction):
         self.bounds = lzip([-self.dim] * self.dim, [self.dim + 1] * self.dim)
         self.min_loc = 1 / arange(1, self.dim + 1)
         self.fmin = 0
-        self.fmin = 0
         self.fmax = self.do_evaluate([self.dim + 1] * self.dim)
         self.classifiers = ['unscaled']
 
@@ -2612,11 +2662,12 @@ class Perm02(TestFunction):
 
 class Pinter(TestFunction):
     def __init__(self, dim=2):
+        assert dim > 1
         super(Pinter, self).__init__(dim)
-        self.bounds = lzip([-5] * self.dim, [10] * self.dim)
+        self.bounds = lzip([-5] * self.dim, [2] * self.dim)
         self.min_loc = [0] * self.dim
         self.fmin = 0
-        self.fmax = self.do_evaluate([10] * self.dim)
+        self.fmax = self.do_evaluate([-5] * self.dim)
 
     def do_evaluate(self, x):
         f = 0
@@ -2710,11 +2761,12 @@ class Price(TestFunction):
 
 class Qing(TestFunction):
     def __init__(self, dim=2):
+        assert dim < 100  # If greater, the optimum is on the boundary
         super(Qing, self).__init__(dim)
-        self.bounds = lzip([-2] * self.dim, [2] * self.dim)
+        self.bounds = lzip([-10] * self.dim, [10] * self.dim)
         self.min_loc = [sqrt(x) for x in range(1, self.dim + 1)]
         self.fmin = 0
-        self.fmax = self.do_evaluate(asarray([2] * self.dim))
+        self.fmax = self.do_evaluate(numpy.max(self.bounds, axis=1))
         self.classifiers = ['multi_min']
 
     def do_evaluate(self, x):
@@ -2846,6 +2898,21 @@ class Schaffer(TestFunction):
     def do_evaluate(self, x):
         x1, x2 = x
         return 0.5 + (sin((x1 ** 2 + x2 ** 2) ** 2) ** 2 - 0.5) / (1 + 0.001 * (x1 ** 2 + x2 ** 2) ** 2)
+
+
+class SchmidtVetters(TestFunction):
+    def __init__(self, dim=3):
+        assert dim == 3
+        super(SchmidtVetters, self).__init__(dim)
+        self.bounds = lzip([0] * self.dim, [10] * self.dim)
+        self.min_loc = [3.79367424567, 3.79367424352, 3.78978412518]
+        self.fmin = 3
+        self.fmax = -0.99009900990
+        self.classifiers = ['oscillatory', 'multi_min']
+
+    def do_evaluate(self, x):
+        x1, x2, x3 = x
+        return 1 / (1 + (x1 - x2) ** 2) + sin(.5 * (pi * x2 + x3)) + exp(-((x1 + x2) / (x2 + 1e-16) - 2) ** 2)
 
 
 class Schwefel01(TestFunction):
@@ -2998,7 +3065,7 @@ class Shekel10(TestFunction):
              [5, 5, 3, 3],
              [8, 1, 8, 1],
              [6, 2, 6, 2],
-             [7, 3.6, 7, 3.6]]
+             [7, 3, 7, 3]]
         )
         c_vec = asarray([0.1, 0.2, 0.2, 0.4, 0.4, 0.6, 0.3, 0.7, 0.5, 0.5])
         return -sum(1 / (dot(x - a, x - a) + c) for a, c in lzip(a_mat, c_vec))
@@ -3328,7 +3395,7 @@ class Weierstrass(TestFunction):
         super(Weierstrass, self).__init__(dim)
         self.bounds = lzip([-0.5] * self.dim, [0.2] * self.dim)
         self.min_loc = [0] * self.dim
-        self.fmin = 4
+        self.fmin = self.do_evaluate(asarray(self.min_loc))
         self.fmax = self.do_evaluate(asarray([-0.5] * self.dim))
         self.classifiers = ['complicated']
 
