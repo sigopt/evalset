@@ -1,5 +1,4 @@
 from setuptools import setup
-from sigopt.version import VERSION
 
 # keep this in sync with requirements.txt
 install_requires=['numpy==1.10.1', 'scipy==0.16.0']
