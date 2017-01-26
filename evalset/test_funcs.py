@@ -50,7 +50,6 @@ from numpy import dot
 from scipy.special import jv as besselj
 
 from timeit import default_timer as now
-from collections import namedtuple
 
 seterr(all='ignore')
 
@@ -2380,6 +2379,77 @@ class McCourt28(McCourtBase):
         self.fmin = -7.69432628909
         self.fmax = 9.13671993002
         self.classifiers = ['unimodal']
+
+
+class MegaDomain01(TestFunction):
+    def __init__(self, dim=2):
+        assert dim == 2
+        super(MegaDomain01, self).__init__(dim)
+        self.bounds = [[.1, 1], [1, 1000]]
+        self.min_loc = [.6, 200]
+        self.fmin = 0.0
+        self.fmax = 640000.0
+        self.classifiers = ['unimodal', 'unscaled']
+
+    def do_evaluate(self, x):
+        return numpy.sum((x - self.min_loc) ** 2)
+
+
+class MegaDomain02(TestFunction):
+    def __init__(self, dim=3):
+        assert dim == 3
+        super(MegaDomain02, self).__init__(dim)
+        self.bounds = [[.0001, .1], [1, 10000], [40, 78901]]
+        self.min_loc = [.08, 2345, 12345]
+        self.fmin = 0.0
+        self.fmax = 4488300161.0
+        self.classifiers = ['unimodal', 'unscaled']
+
+    def do_evaluate(self, x):
+        return numpy.sum((x - self.min_loc) ** 2)
+
+
+class MegaDomain03(TestFunction):
+    def __init__(self, dim=3):
+        assert dim == 3
+        super(MegaDomain03, self).__init__(dim)
+        self.bounds = [[.0001, .1], [1, 10000], [40, 78901]]
+        self.min_loc = [.08, 2345, 12345]
+        self.fmin = -1.0
+        self.fmax = 0.0
+        self.classifiers = ['unimodal']
+
+    def do_evaluate(self, x):
+        return -numpy.exp(-(numpy.sum((x - self.min_loc) / numpy.array([.05, 6000, 34567])) ** 2))
+
+
+class MegaDomain04(TestFunction):
+    def __init__(self, dim=3):
+        assert dim == 3
+        super(MegaDomain04, self).__init__(dim)
+        self.bounds = [[.0001, .1], [1, 10000], [40, 78901]]
+        self.min_loc = [.03, 1234, 65432]
+        self.fmin = -1.1
+        self.fmax = -0.04262395297
+        self.classifiers = ['unimodal']
+
+    def do_evaluate(self, x):
+        return -1.1 * numpy.exp(-abs(numpy.sum((x - self.min_loc) / numpy.array([.05, 6000, 34567]))))
+
+
+class MegaDomain05(TestFunction):
+    def __init__(self, dim=4):
+        assert dim == 4
+        super(MegaDomain05, self).__init__(dim)
+        self.bounds = [[.0001, .1], [.0001, .1], [1, 10000], [40, 78901]]
+        self.min_loc = [.0001, .04074477005, 1392.05038121473, 9185.44149117756]
+        self.fmin = -1.0999
+        self.fmax = 0.099999
+        self.classifiers = ['bound_min']
+
+    def do_evaluate(self, x):
+        exponent = numpy.sum((x[1:] - numpy.array([.02, 3333, 12345])) / numpy.array([.05, 6000, 34567]))
+        return x[0] - 1.1 * numpy.exp(-exponent ** 2)
 
 
 class Michalewicz(TestFunction):
