@@ -5,17 +5,17 @@ class MultioptTestFunction(TestFunction):
 
   def __init__(self, dim):
     super(MultioptTestFunction, self).__init__(dim)
-    self.local_minima = [] # Sorted in increasing order of function value at the local minima
+    self.local_minima_loc = [] # Sorted in increasing order of function value at the local minima
 
 class LowDMixtureOfGaussians(MultioptTestFunction):
 
   def __init__(self, dim=2):
     assert dim == 2
-    super(KevinTest, self).__init__(dim)
+    super(LowDMixtureOfGaussians, self).__init__(dim)
     self.bounds = lzip([-1] * self.dim, [1] * self.dim)
     self.fmin = -0.502124885135
     self.fmax = 0
-    self.local_minima = [(-0.2, -0.5), (0.8, 0.3)]
+    self.local_minima_loc = [(-0.2, -0.5), (0.8, 0.3)]
 
   def do_evaluate(self, x):
     x1, x2 = x
