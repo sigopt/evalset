@@ -103,3 +103,38 @@ class MidDMixtureOfGaussians02(MultioptTestFunction):
         0.5 * numpy.exp(-sum((x - mu1)**2)) +
         0.5 * numpy.exp(-sum((x - mu2)**2))
     )
+
+class CosineExponential(MultioptTestFunction):
+
+  def __init__(self, dim=2):
+    assert dim == 2
+    super(CosineExponential, self).__init__(dim)
+    self.bounds = lzip([-1] * self.dim, [1] * self.dim)
+    self.fmin = -1
+    self.fmax = 0.88659774910
+    self.local_minima_loc = [(0.0, 0.0),
+                             (0.76627855858, 0.76627855858),
+                             (0.76627855858, -0.76627855858),
+                             (-0.76627855858, 0.76627855858),
+                             (-0.76627855858, -0.76627855858)]
+
+  def do_evaluate(self, x):
+    x1, x2 = x
+    return -numpy.exp(-0.2 * (x1**2 + x2**2)) * numpy.cos(4 * x1) * numpy.cos(4 * x2)
+
+class SimpleQuadratic(MultioptTestFunction):
+
+  def __init__(self, dim=2):
+    assert dim >= 2
+    super(SimpleQuadratic, self).__init__(dim)
+    self.bounds = lzip([-1] * self.dim, [1] * self.dim)
+    self.fmin = -1
+    self.fmax = 0
+    self.local_minima_loc = [(-1.0, -1.0) + tuple([0] * (dim - 2)),
+                             (-1.0, 1.0) + tuple([0] * (dim - 2)),
+                             (1.0, -1.0) + tuple([0] * (dim - 2)),
+                             (1.0, 1.0) + tuple([0] * (dim - 2))]
+
+  def do_evaluate(self, x):
+    x1, x2 = x[0], x[1]
+    return -0.5 * (x1**2 + x2**2)
