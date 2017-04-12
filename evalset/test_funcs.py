@@ -2594,6 +2594,7 @@ class MixtureOfGaussians01(TestFunction):
             .5 * numpy.exp(-8 * (.3 * (x1 - .8) ** 2 + .6 * (x2 - .3) ** 2))
         )
 
+
 class MixtureOfGaussians02(TestFunction):
 
     def __init__(self, dim=2):
@@ -2613,6 +2614,7 @@ class MixtureOfGaussians02(TestFunction):
             .3 * numpy.exp(-8 * (.3 * (x1 - .8) ** 2 + .6 * (x2 - .3) ** 2))
         )
 
+
 class MixtureOfGaussians03(TestFunction):
 
     def __init__(self, dim=2):
@@ -2631,6 +2633,7 @@ class MixtureOfGaussians03(TestFunction):
             .5 * numpy.exp(-10 * (.8 * (x1 + .2) ** 2 + .7 * (x2 + .5) ** 2)) +
             .5 * numpy.exp(-2 * (.3 * (x1 - .8) ** 2 + .6 * (x2 - .3) ** 2))
         )
+
 
 class MixtureOfGaussians04(TestFunction):
 
@@ -2653,6 +2656,7 @@ class MixtureOfGaussians04(TestFunction):
             .5 * numpy.exp(-9 * (.8 * (x1 - .3) ** 2 + .7 * (x2 + .8) ** 2)) +
             .5 * numpy.exp(-10 * (.8 * (x1 - .8) ** 2 + .7 * (x2 - .8)** 2))
         )
+
 
 class MixtureOfGaussians05(TestFunction):
 
@@ -2692,6 +2696,7 @@ class MixtureOfGaussians06(TestFunction):
             0.5 * numpy.exp(-sum((x - mu1)**2)) +
             0.5 * numpy.exp(-sum((x - mu2)**2))
         )
+
 
 class Ned01(TestFunction):
     def __init__(self, dim=2):
