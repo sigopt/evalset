@@ -24,6 +24,7 @@ Each function is also tagged with a list of relevant classifiers:
   oscillatory - A function with a general trend and an short range oscillatory component.
   discrete - A function which can only take discrete values.
   unimodal - A function with a single local minimum, or no local minimum and only a minimum on the boundary.
+  multimodal - A function with multiple local minimum
   bound_min - A function with its minimum on the boundary.
   multi_min - A function which takes its minimum value at multiple locations.
   nonsmooth - A function with discontinuous derivatives.
@@ -107,6 +108,7 @@ class TestFunction(object):
         self.num_evals = 0
         self.min_loc = None
         self.fmin = None
+        self.local_fmin = []
         self.fmax = None
         self.bounds = None
         self.classifiers = []
@@ -2571,6 +2573,129 @@ class ManifoldMin(TestFunction):
 
     def do_evaluate(self, x):
         return sum(abs(x)) * prod(abs(x))
+
+
+class MixtureOfGaussians01(TestFunction):
+
+    def __init__(self, dim=2):
+        assert dim == 2
+        super(MixtureOfGaussians01, self).__init__(dim)
+        self.bounds = lzip([-1] * self.dim, [1] * self.dim)
+        self.min_loc = [(-0.19870980807, -0.49764469526)]
+        self.fmin = -0.50212488514
+        self.fmax = -0.00001997307
+        self.local_fmin = [-0.50212488514, -0.500001900968]
+        self.classifiers = ['multimodal']
+
+    def do_evaluate(self, x):
+        x1, x2 = x
+        return -(
+            .5 * numpy.exp(-10 * (.8 * (x1 + .2) ** 2 + .7 * (x2 + .5) ** 2)) +
+            .5 * numpy.exp(-8 * (.3 * (x1 - .8) ** 2 + .6 * (x2 - .3) ** 2))
+        )
+
+
+class MixtureOfGaussians02(TestFunction):
+
+    def __init__(self, dim=2):
+        assert dim == 2
+        super(MixtureOfGaussians02, self).__init__(dim)
+        self.bounds = lzip([-1] * self.dim, [1] * self.dim)
+        self.min_loc = [(-0.19945435737, -0.49900294852)]
+        self.fmin = -0.70126732387
+        self.fmax = -0.00001198419
+        self.local_fmin = [-0.70126732387, -0.30000266214]
+        self.classifiers = ['multimodal']
+
+    def do_evaluate(self, x):
+        x1, x2 = x
+        return -(
+            .7 * numpy.exp(-10 * (.8 * (x1 + .2) ** 2 + .7 * (x2 + .5) ** 2)) +
+            .3 * numpy.exp(-8 * (.3 * (x1 - .8) ** 2 + .6 * (x2 - .3) ** 2))
+        )
+
+
+class MixtureOfGaussians03(TestFunction):
+
+    def __init__(self, dim=2):
+        assert dim == 2
+        super(MixtureOfGaussians03, self).__init__(dim)
+        self.bounds = lzip([-1] * self.dim, [1] * self.dim)
+        self.min_loc = [(-0.17918253215, -0.46292606370)]
+        self.fmin = -0.63338923402
+        self.fmax = -0.00993710053
+        self.local_fmin = [-0.63338923402, -0.500001901929]
+        self.classifiers = ['multimodal']
+
+    def do_evaluate(self, x):
+        x1, x2 = x
+        return -(
+            .5 * numpy.exp(-10 * (.8 * (x1 + .2) ** 2 + .7 * (x2 + .5) ** 2)) +
+            .5 * numpy.exp(-2 * (.3 * (x1 - .8) ** 2 + .6 * (x2 - .3) ** 2))
+        )
+
+
+class MixtureOfGaussians04(TestFunction):
+
+    def __init__(self, dim=2):
+        assert dim == 2
+        super(MixtureOfGaussians04, self).__init__(dim)
+        self.bounds = lzip([-1] * self.dim, [1] * self.dim)
+        self.min_loc = [(-0.04454170197, 0.03290524075)]
+        self.fmin = -0.582553299011
+        self.fmax = -0.00207854059
+        self.local_fmin = [-0.582553299011, -0.504982585841, -0.503213726167, -0.501693315297, -0.500412880827]
+        self.classifiers = ['multimodal']
+
+    def do_evaluate(self, x):
+        x1, x2 = x
+        return -(
+            .5 * numpy.exp(-10 * (.8 * (x1 + .8) ** 2 + .7 * (x2 + .8) ** 2)) +
+            .5 * numpy.exp(-8 * (.3 * (x1 + .8) ** 2 + .6 * (x2 - .3) ** 2)) +
+            .5 * numpy.exp(-9 * (.8 * x1 ** 2 + .7 * x2 ** 2)) +
+            .5 * numpy.exp(-9 * (.8 * (x1 - .3) ** 2 + .7 * (x2 + .8) ** 2)) +
+            .5 * numpy.exp(-10 * (.8 * (x1 - .8) ** 2 + .7 * (x2 - .8)** 2))
+        )
+
+
+class MixtureOfGaussians05(TestFunction):
+
+    def __init__(self, dim=8):
+        assert dim == 8
+        super(MixtureOfGaussians05, self).__init__(dim)
+        self.bounds = lzip([-1] * self.dim, [1] * self.dim)
+        self.min_loc = [(-0.19870980798, -0.49764469559, 0, 0, 0, 0, 0, 0)]
+        self.fmin = -0.50212691955
+        self.fmax = -0.00001997307
+        self.local_fmin = [-0.50212488514, -0.500001900968]
+        self.classifiers = ['multimodal', 'multi_min']
+
+    def do_evaluate(self, x):
+        x1, x2, x3, x4, x5, x6, x7, x8 = x
+        return -(
+            .5 * numpy.exp(-10 * (.8 * (x1 + .2) ** 2 + .7 * (x2 + .5) ** 2)) +
+            .5 * numpy.exp(-8 * (.3 * (x1 - .8) ** 2 + .6 * (x2 - .3) ** 2))
+        )
+
+
+class MixtureOfGaussians06(TestFunction):
+
+    def __init__(self, dim=8):
+        assert dim == 8
+        super(MixtureOfGaussians06, self).__init__(dim)
+        self.bounds = lzip([-1] * self.dim, [1] * self.dim)
+        self.min_loc = [(0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)]
+        self.fmin = -0.50016818373
+        self.fmax = -0.00004539993
+        self.classifiers = ['multi_min']
+
+    def do_evaluate(self, x):
+        mu1 = 0.5 * numpy.ones(8)
+        mu2 = -0.5 * numpy.ones(8)
+        return -(
+            0.5 * numpy.exp(-sum((x - mu1)**2)) +
+            0.5 * numpy.exp(-sum((x - mu2)**2))
+        )
 
 
 class Ned01(TestFunction):
