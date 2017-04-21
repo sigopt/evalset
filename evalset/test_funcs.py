@@ -45,7 +45,7 @@ import numpy
 
 from numpy import abs, arange, arctan2, asarray, cos, exp, floor, log, log10, mean
 from numpy import pi, prod, roll, seterr, sign, sin, sqrt, sum, zeros, zeros_like, tan
-from numpy import dot
+from numpy import dot, inner
 
 from scipy.special import jv as besselj
 
@@ -204,6 +204,10 @@ class Failifier(TestFunction):
     @staticmethod
     def sum_to_lte(x, metric):
         return sum(x) <= metric
+
+    @staticmethod
+    def linear_constraint(x, weights, metric):
+        return inner(x, weights) <= metric
 
     @staticmethod
     def each_lte(x, metric):
