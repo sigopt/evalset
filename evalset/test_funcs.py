@@ -258,34 +258,43 @@ class Failifier(TestFunction):
 
 
 class Constrainer(TestFunction):
+    """This class defines a set of (linear) constraints to the imput space.
+
+    The constraints should be defined as a matrix (list of lists) of
+    weights "A" and the list of right hand side (rhs) terms "b" such that the
+    parameters x should satisfy A*x <= b
+
+    We have the failify boolean flag (True by default), to consider
+    the constrained space as failure region to help comparison with
+    methods that do not support hard constraints.
+
+    Example:    weights = [[1,  1]
+                           [1, -1]]
+                rhs = [1, 2.5]
+                alpine01_constrained = Constrainer(Alpine01(), weights, rhs, failify=True)
+            This would generate the constraints that, if the input space is (x,y), then x + y <= 1 and x - y <= 2.5
+
     """
-    This class defines a set of (linear) constraints to the imput space.
-
-    Example:    constraint_function = lambda x: Constrainer.sum_to_lte(x, 1)
-                alpine01_fail = Constrainer(Alpine01(), constraint_function)
-            This would generate the constraint that the sum of all parameters must be <= 1.
-    """
-    @staticmethod
-    def sum_to_lte(x, metric):
-        return sum(x) <= metric
-
-    @staticmethod
-    def linear_constraint(x, weights, metric):
-        return inner(x, weights) <= metric
-
-
-    def __init__(self, func, constraint_indicator, failify=True, return_nan=True, verify=True):
+    def __init__(self, func, constraint_weights, constraint_rhs, failify=True, return_nan=True, verify=True):
         assert isinstance(func, TestFunction)
+        assert len(constraint_weights) == len(constraint_rhs)
         super(Failifier, self).__init__(func.dim, verify)
         self.bounds, self.min_loc, self.fmax, self.fmin = func.bounds, func.min_loc, func.fmax, func.fmin
         self.func = func
-        self.constraint_indicator = constraint_indicator
+        self.constraint_weights = constraint_weights
+        self.constraint_rhs = constraint_rhs
         self.failify = failify
         self.return_nan = return_nan
-        self.classifiers = list(set(self.classifiers) | set(['failure']))
+        self.classifiers = list(set(self.classifiers) | set(['constraint']))
+
+    def constraint_check(self, x):
+        for weights, rhs in zip(self.constraint_weights, self.constraint_rhs):
+            if inner(x, weights) <= rhs:
+                return False
+        return True
 
     def do_evaluate(self, x):
-        if self.failify and self.constraint_indicator(x):
+        if self.failify and self.constraint_check(x):
             if self.return_nan:
                 return float("nan")
             else:
