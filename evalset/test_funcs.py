@@ -24,7 +24,8 @@ Each function is also tagged with a list of relevant classifiers:
   oscillatory - A function with a general trend and an short range oscillatory component.
   discrete - A function which can only take discrete values.
   unimodal - A function with a single local minimum, or no local minimum and only a minimum on the boundary.
-  multimodal - A function with multiple local minimum
+  
+multimodal - A function with multiple local minimum
   bound_min - A function with its minimum on the boundary.
   multi_min - A function which takes its minimum value at multiple locations.
   nonsmooth - A function with discontinuous derivatives.
@@ -251,6 +252,49 @@ class Failifier(TestFunction):
 
     def __repr__(self):
         return '{0}({1!r}, failure)'.format(
+            self.__class__.__name__,
+            self.func,
+        )
+
+
+class Constrainer(TestFunction):
+    """
+    This class defines a set of (linear) constraints to the imput space.
+
+    Example:    constraint_function = lambda x: Constrainer.sum_to_lte(x, 1)
+                alpine01_fail = Constrainer(Alpine01(), constraint_function)
+            This would generate the constraint that the sum of all parameters must be <= 1.
+    """
+    @staticmethod
+    def sum_to_lte(x, metric):
+        return sum(x) <= metric
+
+    @staticmethod
+    def linear_constraint(x, weights, metric):
+        return inner(x, weights) <= metric
+
+
+    def __init__(self, func, constraint_indicator, failify=True, return_nan=True, verify=True):
+        assert isinstance(func, TestFunction)
+        super(Failifier, self).__init__(func.dim, verify)
+        self.bounds, self.min_loc, self.fmax, self.fmin = func.bounds, func.min_loc, func.fmax, func.fmin
+        self.func = func
+        self.constraint_indicator = constraint_indicator
+        self.failify = failify
+        self.return_nan = return_nan
+        self.classifiers = list(set(self.classifiers) | set(['failure']))
+
+    def do_evaluate(self, x):
+        if self.failify and self.constraint_indicator(x):
+            if self.return_nan:
+                return float("nan")
+            else:
+                return self.fmax
+        else:
+            return self.func.evaluate(x)
+
+    def __repr__(self):
+        return '{0}({1!r}, constraint)'.format(
             self.__class__.__name__,
             self.func,
         )
