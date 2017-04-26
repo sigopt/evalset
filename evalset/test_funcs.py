@@ -278,7 +278,7 @@ class Constrainer(TestFunction):
     def __init__(self, func, constraint_weights, constraint_rhs, failify=True, return_nan=True, verify=True):
         assert isinstance(func, TestFunction)
         assert len(constraint_weights) == len(constraint_rhs)
-        super(Failifier, self).__init__(func.dim, verify)
+        super(Constrainer, self).__init__(func.dim, verify)
         self.bounds, self.min_loc, self.fmax, self.fmin = func.bounds, func.min_loc, func.fmax, func.fmin
         self.func = func
         self.constraint_weights = constraint_weights
