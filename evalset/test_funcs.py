@@ -277,7 +277,7 @@ class Constrainer(TestFunction):
     """
 
     @staticmethod
-    def default_constraint_check(self, x, weights, rhs):
+    def default_constraint_check(x, weights, rhs):
         for w, r in zip(weights, rhs):
             if inner(x, w) <= r:
                 return False
