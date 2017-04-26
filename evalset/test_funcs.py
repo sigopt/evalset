@@ -275,7 +275,15 @@ class Constrainer(TestFunction):
             This would generate the constraints that, if the input space is (x,y), then x + y <= 1 and x - y <= 2.5
 
     """
-    def __init__(self, func, constraint_weights, constraint_rhs, failify=True, return_nan=True, verify=True):
+
+    @staticmethod
+    def default_constraint_check(self, x, weights, rhs):
+        for w, r in zip(weights, rhs):
+            if inner(x, w) <= r:
+                return False
+        return True
+
+    def __init__(self, func, constraint_weights, constraint_rhs, constraint_check=None, return_nan=True, verify=True):
         assert isinstance(func, TestFunction)
         assert len(constraint_weights) == len(constraint_rhs)
         super(Constrainer, self).__init__(func.dim, verify)
@@ -283,18 +291,12 @@ class Constrainer(TestFunction):
         self.func = func
         self.constraint_weights = constraint_weights
         self.constraint_rhs = constraint_rhs
-        self.failify = failify
+        self.constraint_check = constraint_check
         self.return_nan = return_nan
         self.classifiers = list(set(self.classifiers) | set(['constraint']))
 
-    def constraint_check(self, x):
-        for weights, rhs in zip(self.constraint_weights, self.constraint_rhs):
-            if inner(x, weights) <= rhs:
-                return False
-        return True
-
     def do_evaluate(self, x):
-        if self.failify and self.constraint_check(x):
+        if self.constraint_check is not None and self.constraint_check(x, self.constraint_weights, self.constraint_rhs):
             if self.return_nan:
                 return float("nan")
             else:
