@@ -262,7 +262,7 @@ class Constrainer(TestFunction):
 
     The constraints should be defined as a matrix (list of lists) of
     weights "A" and the list of right hand side (rhs) terms "b" such that the
-    parameters x should satisfy A*x <= b
+    parameters x should satisfy A*x => b
 
     We have the failify boolean flag (True by default), to consider
     the constrained space as failure region to help comparison with
@@ -272,14 +272,14 @@ class Constrainer(TestFunction):
                            [1, -1]]
                 rhs = [1, 2.5]
                 alpine01_constrained = Constrainer(Alpine01(), weights, rhs, failify=True)
-            This would generate the constraints that, if the input space is (x,y), then x + y <= 1 and x - y <= 2.5
+            This would generate the constraints that, if the input space is (x,y), then x + y => 1 and x - y => 2.5
 
     """
 
     @staticmethod
     def default_constraint_check(x, weights, rhs):
         for w, r in zip(weights, rhs):
-            if inner(x, w) <= r:
+            if inner(x, w) >= r:
                 return False
         return True
 
