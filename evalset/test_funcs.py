@@ -24,7 +24,8 @@ Each function is also tagged with a list of relevant classifiers:
   oscillatory - A function with a general trend and an short range oscillatory component.
   discrete - A function which can only take discrete values.
   unimodal - A function with a single local minimum, or no local minimum and only a minimum on the boundary.
-  multimodal - A function with multiple local minimum
+  
+multimodal - A function with multiple local minimum
   bound_min - A function with its minimum on the boundary.
   multi_min - A function which takes its minimum value at multiple locations.
   nonsmooth - A function with discontinuous derivatives.
@@ -46,7 +47,7 @@ import numpy
 
 from numpy import abs, arange, arctan2, asarray, cos, exp, floor, log, log10, mean
 from numpy import pi, prod, roll, seterr, sign, sin, sqrt, sum, zeros, zeros_like, tan
-from numpy import dot
+from numpy import dot, inner
 
 from scipy.special import jv as besselj
 
@@ -208,6 +209,10 @@ class Failifier(TestFunction):
         return sum(x) <= metric
 
     @staticmethod
+    def linear_constraint(x, weights, metric):
+        return inner(x, weights) <= metric
+
+    @staticmethod
     def each_lte(x, metric):
         for _x in x:
             if _x > metric:
@@ -247,6 +252,60 @@ class Failifier(TestFunction):
 
     def __repr__(self):
         return '{0}({1!r}, failure)'.format(
+            self.__class__.__name__,
+            self.func,
+        )
+
+
+class Constrainer(TestFunction):
+    """This class defines a set of (linear) constraints to the imput space.
+
+    The constraints should be defined as a matrix (list of lists) of
+    weights "A" and the list of right hand side (rhs) terms "b" such that the
+    parameters x should satisfy A*x => b
+
+    We have the failify boolean flag (True by default), to consider
+    the constrained space as failure region to help comparison with
+    methods that do not support hard constraints.
+
+    Example:    weights = [[1,  1]
+                           [1, -1]]
+                rhs = [1, 2.5]
+                alpine01_constrained = Constrainer(Alpine01(), weights, rhs, failify=True)
+            This would generate the constraints that, if the input space is (x,y), then x + y => 1 and x - y => 2.5
+
+    """
+
+    @staticmethod
+    def default_constraint_check(x, weights, rhs):
+        for w, r in zip(weights, rhs):
+            if inner(x, w) >= r:
+                return False
+        return True
+
+    def __init__(self, func, constraint_weights, constraint_rhs, constraint_check=None, return_nan=True, verify=True):
+        assert isinstance(func, TestFunction)
+        assert len(constraint_weights) == len(constraint_rhs)
+        super(Constrainer, self).__init__(func.dim, verify)
+        self.bounds, self.min_loc, self.fmax, self.fmin = func.bounds, func.min_loc, func.fmax, func.fmin
+        self.func = func
+        self.constraint_weights = constraint_weights
+        self.constraint_rhs = constraint_rhs
+        self.constraint_check = constraint_check
+        self.return_nan = return_nan
+        self.classifiers = list(set(self.classifiers) | set(['constraint']))
+
+    def do_evaluate(self, x):
+        if self.constraint_check is not None and self.constraint_check(x, self.constraint_weights, self.constraint_rhs):
+            if self.return_nan:
+                return float("nan")
+            else:
+                return self.fmax
+        else:
+            return self.func.evaluate(x)
+
+    def __repr__(self):
+        return '{0}({1!r}, constraint)'.format(
             self.__class__.__name__,
             self.func,
         )
