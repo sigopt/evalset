@@ -279,7 +279,7 @@ class Constrainer(TestFunction):
     @staticmethod
     def default_constraint_check(x, weights, rhs):
         for w, r in zip(weights, rhs):
-            if inner(x, w) >= r:
+            if inner(x, w) < r:
                 return False
         return True
 
@@ -291,18 +291,21 @@ class Constrainer(TestFunction):
         self.func = func
         self.constraint_weights = constraint_weights
         self.constraint_rhs = constraint_rhs
-        self.constraint_check = constraint_check
         self.return_nan = return_nan
         self.classifiers = list(set(self.classifiers) | set(['constraint']))
+        if constraint_check is not None:
+            self.constraint_check = constraint_check
+        else:
+            self.constraint_check = Constrainer.default_constraint_check
 
     def do_evaluate(self, x):
         if self.constraint_check is not None and self.constraint_check(x, self.constraint_weights, self.constraint_rhs):
-            if self.return_nan:
-                return float("nan")
-            else:
-                return self.fmax
-        else:
             return self.func.evaluate(x)
+        elif self.return_nan:
+            return float("nan")
+        else:
+            return self.fmax
+
 
     def __repr__(self):
         return '{0}({1!r}, constraint)'.format(
