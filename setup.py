@@ -1,8 +1,5 @@
 from setuptools import setup
 
-# keep this in sync with requirements.txt
-install_requires=['numpy==1.10.1', 'scipy==0.16.0']
-
 setup(
   name='evalset',
   version='1.2.0',
