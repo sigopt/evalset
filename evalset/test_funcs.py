@@ -325,12 +325,14 @@ class Noisifier(TestFunction):
 
     Obviously, with the presence of noise, the max and min may no longer be accurate.
     """
-    def __init__(self, func, noise_type, level, verify=True):
+    def __init__(self, func, noise_type, level, scale, verify=True):
         assert isinstance(func, TestFunction)
         if level <= 0:
             raise ValueError('Noise level must be positive, level={0}'.format(level))
         super(Noisifier, self).__init__(func.dim, verify)
         self.bounds, self.min_loc, self.fmax, self.fmin = func.bounds, func.min_loc, func.fmax, func.fmin
+        if scale == 'relative':
+            level *= self.fmax - self.fmin
         self.type = noise_type
         self.level = level
         self.func = func
