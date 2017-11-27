@@ -58,7 +58,7 @@ class MCMcCourt01(MulticriteriaTestFunction):
         super(MCMcCourt01, self).__init__(dim, verify)
         self.output_dim = 2
         self.bounds = lzip([-1] * self.dim, [1] * self.dim)
-        self.min_loc = numpy.array([[.5, .4], [0, .2]])
+        self.min_loc = numpy.array([[.5, -.4], [0, .2]])
         self.fmin = numpy.array([0, -2])
         self.fmax = numpy.array([4.21, -0.510783476247])
         self.frontier = numpy.array([
