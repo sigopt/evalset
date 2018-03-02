@@ -4,3 +4,24 @@
 
 # Compiled python stuff
 *.pyc
+
+# Distribution / packaging
+.Python
+env/
+develop-eggs/
+dist/
+downloads/
+eggs/
+/lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+.env
+
+# Mac
+.DS_Store
+__MACOSX/
