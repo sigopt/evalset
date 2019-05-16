@@ -511,7 +511,7 @@ class MCMcCourt08(MulticriteriaTestFunction):
             [-1.030, -0.961], [-1.024, -1.250], [-1.026, -1.191], [-1.021, -1.296], [-0.977, -1.530],
             [-1.444, -0.797], [-1.467, -0.795], [-0.980, -1.501], [-1.420, -0.819], [-1.445, -0.795],
         ])
-        self.classifiers = ['nonconvex']
+        self.classifiers = ['nonconvex', 'rescaled']
 
     def do_component_function(self, d, x):
         sx = numpy.empty(self.dim)
