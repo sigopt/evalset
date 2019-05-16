@@ -4,7 +4,7 @@ install_requires=['numpy>=1.10.1', 'scipy>=0.16.0']
 
 setup(
   name='evalset',
-  version='1.2.2',
+  version='1.2.3',
   description='Benchmark suite of test functions suitable for evaluating black-box optimization strategies',
   author='SigOpt',
   author_email='support@sigopt.com',
