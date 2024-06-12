@@ -1,6 +1,6 @@
 from setuptools import setup
 
-install_requires=['numpy>=1.10.1', 'scipy>=0.16.0']
+install_requires=['numpy>=1.26.4', 'scipy>=1.13.1']
 
 setup(
   name='evalset',
